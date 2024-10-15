@@ -1,1 +1,4 @@
-export class CreateTrackerDto {}
+export class CreateTrackerDto {
+    chain: string;
+    price: number;
+}
