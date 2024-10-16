@@ -17,6 +17,11 @@ export class TrackerController {
     return this.trackerService.findAll();
   }
 
+  @Get('getPrices')
+  getPrices24hours() {
+    return this.trackerService.getPricesForPast24Hours();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.trackerService.findOne(+id);

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { MailerService } from '@nestjs-modules/mailer';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, Repository } from 'typeorm';
 import { Price } from './entities/price.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoralisService } from './moralis.service';
@@ -24,21 +24,68 @@ export class TrackerService {
     const ethPrice = await this.moralisService.getPrice('0x1');
     const polyPrice = await this.moralisService.getPrice('0x89');
 
-    await this.create({chain: 'ethereum', price: ethPrice});
-    await this.create({chain: 'polygon', price: polyPrice});
+    await this.create({ chain: 'ethereum', price: ethPrice });
+    await this.create({ chain: 'polygon', price: polyPrice });
   }
 
-  async sendMail(user: string, amount: string) {
-    const message = `Price increased by more than 3%`;
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async handleHourlyCheck() {
+    const prices = await this.findAll();
+  
+    for (const price of prices) {
+      // Get the current time and subtract one hour
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+  
+      // Query the price from exactly one hour ago based on timestamp
+      const previousPrice = await this.trackerRepository.findOne({
+        where: {
+          chain: price.chain,
+          timestamp: LessThanOrEqual(oneHourAgo),  
+        },
+        order: { timestamp: 'DESC' },
+      });
+
+      console.log("21er1tge1", previousPrice)
+  
+      // Check if the price increased by more than 3%
+      if (previousPrice && (price.price - previousPrice.price) / previousPrice.price > 0.03) {
+        await this.sendMail('Price increased by 3%', 'Alert: Price Alert');
+      }
+    }
+  }
+  
+
+  async sendMail(message: string, subject: string) {
+    const messageBody = message;
+    const subjectBody = subject
     console.log("SENDINGGGG");
 
     return await this.mailService.sendMail({
       from: 'Agent <agent@demomailtrap.com>',
       to: 'wodif66632@chainds.com',
-      subject: 'Alert: Price Increased',
+      subject: subject,
       text: message,
     });
 
+  }
+
+  async getPricesForPast24Hours(): Promise<any> {
+    const now = new Date();
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(now.getHours() - 24);
+
+    // Query to get all price data points from the last 24 hours
+    const prices = await this.trackerRepository.find({
+      where: {
+        timestamp: Between(twentyFourHoursAgo, now),
+      },
+      order: { timestamp: 'ASC' }  // Order by ascending timestamp
+    });
+
+    console.log("prices of 242423", prices);
+
+    return prices;
   }
 
   async create(createTrackerDto: CreateTrackerDto) {
