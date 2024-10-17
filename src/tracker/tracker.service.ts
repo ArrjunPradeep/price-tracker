@@ -20,6 +20,7 @@ export class TrackerService {
   ) {
   }
 
+  // 1. Automatically save the Price of Ethereum and Polygon every 5 minutes
   @Cron(CronExpression.EVERY_10_SECONDS)
   async handleCron() {
     const ethPrice = await this.moralisService.getPrice('0x1');
@@ -28,10 +29,12 @@ export class TrackerService {
     await this.create({ chain: 'ethereum', price: ethPrice });
     await this.create({ chain: 'polygon', price: polyPrice });
 
-    // await this.getSwapRate(1);
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  /* Automatically send an email, if the price of a chain 
+     increases by more than 3% compared to its price one hour ago
+  */
+  @Cron(CronExpression.EVERY_HOUR)
   async handleHourlyCheck() {
     const prices = await this.findAll();
   
@@ -73,17 +76,17 @@ export class TrackerService {
 
   }
 
+  // API logic - returning the prices of each hour (within 24hours)
   async getPricesForPast24Hours(): Promise<any> {
     const now = new Date();
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(now.getHours() - 24);
 
-    // Query to get all price data points from the last 24 hours
     const prices = await this.trackerRepository.find({
       where: {
         timestamp: Between(twentyFourHoursAgo, now),
       },
-      order: { timestamp: 'ASC' }  // Order by ascending timestamp
+      order: { timestamp: 'ASC' } 
     });
 
     console.log("prices of 242423", prices);
@@ -91,6 +94,7 @@ export class TrackerService {
     return prices;
   }
 
+  // API logic - get swap rate (eth to btc)
   async getSwapRate(ethAmount: number): Promise<any> {
     // Get the price of WBTC (BTC equivalent) in terms of ETH
     const wbtcResponse = await this.moralisService.getPriceData("0x1", "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599");
