@@ -8,19 +8,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoralisService } from './moralis.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Alert } from './entities/alert.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TrackerService {
   FEE_PERCENTAGE: number;
+  email: string;
 
   constructor(
     @InjectRepository(Price)
     private readonly trackerRepository: Repository<Price>,
     @InjectRepository(Alert)
     private readonly alertRepository: Repository<Alert>,
+    private readonly configService: ConfigService,
     private readonly moralisService: MoralisService,
     private readonly mailService: MailerService
   ) {
+    this.email = this.configService.get<string>('RECIPIENT_MAIL');
   }
 
   // 1. Automatically save the Price of Ethereum and Polygon every 5 minutes
@@ -59,13 +63,13 @@ export class TrackerService {
 
       // Check if the price increased by more than 3%
       if (previousPrice && (price.price - previousPrice.price) / previousPrice.price > 0.03) {
-        await this.sendMail('Price increased by 3%', 'Alert: Price Alert', "wodif66632@chainds.com");
+        await this.sendMail('Price increased by 3%', 'Alert: Price Alert', this.email);
       }
     }
   }
 
   // Cron job to check the prices every 5 minutes
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async checkPriceAlerts() {
     const alerts = await this.alertRepository.find();
 
@@ -73,7 +77,7 @@ export class TrackerService {
       const currentPrice = await this.moralisService.getPrice(alert.chain);
 
       if (currentPrice >= alert.price) {
-        await this.sendMail(`Current price is ${currentPrice} `, `Price goes over ${alert.price}`, "wodif66632@chainds.com");
+        await this.sendMail(`Current price is ${currentPrice} `, `Price goes over ${alert.price}`, this.email);
       }
     }
   }
