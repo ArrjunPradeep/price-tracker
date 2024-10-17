@@ -3,6 +3,7 @@ import { TrackerService } from './tracker.service';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { SwapRateDto } from './dto/swarp-rate.dto';
+import { SetAlertDto } from './dto/set-alert.dto';
 
 @Controller('tracker')
 export class TrackerController {
@@ -21,6 +22,12 @@ export class TrackerController {
   @Get('getPrices')
   getPrices24hours() {
     return this.trackerService.getPricesForPast24Hours();
+  }
+
+  @Post('setAlert')
+  async setAlert(@Body() setAlertDto: SetAlertDto) {
+    const { chain, price, email } = setAlertDto;
+    return this.trackerService.createAlert(chain, price, email);
   }
 
   @Post('swapRate')

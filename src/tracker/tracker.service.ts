@@ -7,6 +7,7 @@ import { Price } from './entities/price.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoralisService } from './moralis.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Alert } from './entities/alert.entity';
 
 @Injectable()
 export class TrackerService {
@@ -15,6 +16,8 @@ export class TrackerService {
   constructor(
     @InjectRepository(Price)
     private readonly trackerRepository: Repository<Price>,
+    @InjectRepository(Alert)
+    private readonly alertRepository: Repository<Alert>,
     private readonly moralisService: MoralisService,
     private readonly mailService: MailerService
   ) {
@@ -31,36 +34,49 @@ export class TrackerService {
 
   }
 
-  /* Automatically send an email, if the price of a chain 
+  /* 2. Automatically send an email, if the price of a chain 
      increases by more than 3% compared to its price one hour ago
   */
   @Cron(CronExpression.EVERY_HOUR)
   async handleHourlyCheck() {
     const prices = await this.findAll();
-  
+
     for (const price of prices) {
       // Get the current time and subtract one hour
       const oneHourAgo = new Date();
       oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-  
+
       // Query the price from exactly one hour ago based on timestamp
       const previousPrice = await this.trackerRepository.findOne({
         where: {
           chain: price.chain,
-          timestamp: LessThanOrEqual(oneHourAgo),  
+          timestamp: LessThanOrEqual(oneHourAgo),
         },
         order: { timestamp: 'DESC' },
       });
 
       console.log("21er1tge1", previousPrice)
-  
+
       // Check if the price increased by more than 3%
       if (previousPrice && (price.price - previousPrice.price) / previousPrice.price > 0.03) {
         await this.sendMail('Price increased by 3%', 'Alert: Price Alert');
       }
     }
   }
-  
+
+  // Cron job to check the prices every 5 minutes
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async checkPriceAlerts() {
+    const alerts = await this.alertRepository.find();
+
+    for (const alert of alerts) {
+      const currentPrice = await this.moralisService.getPrice(alert.chain);
+
+      if (currentPrice >= alert.price) {
+        await this.sendMail("Price Alert", `Price goes over ${currentPrice}`);
+      }
+    }
+  }
 
   async sendMail(message: string, subject: string) {
     const messageBody = message;
@@ -69,14 +85,14 @@ export class TrackerService {
 
     return await this.mailService.sendMail({
       from: 'Agent <agent@demomailtrap.com>',
-      to: 'wodif66632@chainds.com',
+      to: 'dopaxef372@advitize.com',
       subject: subject,
       text: message,
     });
 
   }
 
-  // API logic - returning the prices of each hour (within 24hours)
+  // 3. API logic - returning the prices of each hour (within 24hours)
   async getPricesForPast24Hours(): Promise<any> {
     const now = new Date();
     const twentyFourHoursAgo = new Date();
@@ -86,7 +102,7 @@ export class TrackerService {
       where: {
         timestamp: Between(twentyFourHoursAgo, now),
       },
-      order: { timestamp: 'ASC' } 
+      order: { timestamp: 'ASC' }
     });
 
     console.log("prices of 242423", prices);
@@ -94,7 +110,13 @@ export class TrackerService {
     return prices;
   }
 
-  // API logic - get swap rate (eth to btc)
+  // 4. API to create an alert
+  async createAlert(chain: string, price: number, email: string) {
+    const alert = this.alertRepository.create({ chain, price, email });
+    return await this.alertRepository.save(alert);
+  }
+
+  // 5. API logic - get swap rate (eth to btc)
   async getSwapRate(ethAmount: number): Promise<any> {
     // Get the price of WBTC (BTC equivalent) in terms of ETH
     const wbtcResponse = await this.moralisService.getPriceData("0x1", "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599");
@@ -117,14 +139,14 @@ export class TrackerService {
     console.log("btcRece", btcReceived);
     console.log("totalFee", totalFeeEth);
     console.log("totalFeeUsd", totalFeeUsd);
-    
+
 
     return {
       btcReceived,
       totalFeeEth,
       totalFeeUsd,
-      btcPriceUsd: wbtcUsdPrice, 
-      ethPriceUsd: ethUsdPrice,  
+      btcPriceUsd: wbtcUsdPrice,
+      ethPriceUsd: ethUsdPrice,
     };
   }
 

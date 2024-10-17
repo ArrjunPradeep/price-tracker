@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MoralisService } from './moralis.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { Alert } from './entities/alert.entity';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
       }),
       inject: [ConfigService]
     }),
-    TypeOrmModule.forFeature([Price]),
+    TypeOrmModule.forFeature([Price, Alert]),
     ScheduleModule.forRoot()
   ],
   controllers: [TrackerController],
