@@ -59,13 +59,13 @@ export class TrackerService {
 
       // Check if the price increased by more than 3%
       if (previousPrice && (price.price - previousPrice.price) / previousPrice.price > 0.03) {
-        await this.sendMail('Price increased by 3%', 'Alert: Price Alert');
+        await this.sendMail('Price increased by 3%', 'Alert: Price Alert', "wodif66632@chainds.com");
       }
     }
   }
 
   // Cron job to check the prices every 5 minutes
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async checkPriceAlerts() {
     const alerts = await this.alertRepository.find();
 
@@ -73,19 +73,19 @@ export class TrackerService {
       const currentPrice = await this.moralisService.getPrice(alert.chain);
 
       if (currentPrice >= alert.price) {
-        await this.sendMail("Price Alert", `Price goes over ${currentPrice}`);
+        await this.sendMail(`Current price is ${currentPrice} `, `Price goes over ${alert.price}`, "wodif66632@chainds.com");
       }
     }
   }
 
-  async sendMail(message: string, subject: string) {
+  async sendMail(message: string, subject: string, email: string) {
     const messageBody = message;
     const subjectBody = subject
     console.log("SENDINGGGG");
 
     return await this.mailService.sendMail({
       from: 'Agent <agent@demomailtrap.com>',
-      to: 'dopaxef372@advitize.com',
+      to: email,
       subject: subject,
       text: message,
     });
