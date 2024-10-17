@@ -10,6 +10,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TrackerService {
+  FEE_PERCENTAGE: number;
 
   constructor(
     @InjectRepository(Price)
@@ -19,13 +20,15 @@ export class TrackerService {
   ) {
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async handleCron() {
     const ethPrice = await this.moralisService.getPrice('0x1');
     const polyPrice = await this.moralisService.getPrice('0x89');
 
     await this.create({ chain: 'ethereum', price: ethPrice });
     await this.create({ chain: 'polygon', price: polyPrice });
+
+    // await this.getSwapRate(1);
   }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
@@ -86,6 +89,39 @@ export class TrackerService {
     console.log("prices of 242423", prices);
 
     return prices;
+  }
+
+  async getSwapRate(ethAmount: number): Promise<any> {
+    // Get the price of WBTC (BTC equivalent) in terms of ETH
+    const wbtcResponse = await this.moralisService.getPriceData("0x1", "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599");
+
+    // Get the price of ETH in USD
+    const ethResponse = await this.moralisService.getPriceData("0x1", "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+
+    const wbtcUsdPrice = wbtcResponse.usdPrice;  // WBTC price in USD
+    const ethUsdPrice = ethResponse.usdPrice;    // ETH price in USD
+    const ethPerWbtc = wbtcResponse.nativePrice.value / (10 ** wbtcResponse.nativePrice.decimals); // ETH per 1 WBTC
+
+    console.log("124712r84", wbtcUsdPrice, ethUsdPrice, ethPerWbtc)
+
+    const btcReceived = ethAmount / ethPerWbtc;
+
+    const totalFeeEth = ethAmount * (0.03 / 100);
+
+    const totalFeeUsd = totalFeeEth * ethUsdPrice;
+
+    console.log("btcRece", btcReceived);
+    console.log("totalFee", totalFeeEth);
+    console.log("totalFeeUsd", totalFeeUsd);
+    
+
+    return {
+      btcReceived,
+      totalFeeEth,
+      totalFeeUsd,
+      btcPriceUsd: wbtcUsdPrice, 
+      ethPriceUsd: ethUsdPrice,  
+    };
   }
 
   async create(createTrackerDto: CreateTrackerDto) {

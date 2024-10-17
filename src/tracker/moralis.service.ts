@@ -19,4 +19,13 @@ export class MoralisService {
 
     return response.result[0].usdPrice;
   }
+
+  async getPriceData(chain: string, address: string): Promise<any> {
+    const response = await Moralis.EvmApi.token.getTokenPrice({
+        chain: chain,
+        address: address,
+    });
+
+    return response.toJSON();
+  }
 }

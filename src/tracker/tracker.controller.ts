@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { TrackerService } from './tracker.service';
 import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
+import { SwapRateDto } from './dto/swarp-rate.dto';
 
 @Controller('tracker')
 export class TrackerController {
@@ -20,6 +21,12 @@ export class TrackerController {
   @Get('getPrices')
   getPrices24hours() {
     return this.trackerService.getPricesForPast24Hours();
+  }
+
+  @Post('swapRate')
+  getSwapRate(@Body() swapRateDto: SwapRateDto) {
+    const {amount} = swapRateDto;
+    return this.trackerService.getSwapRate(amount);
   }
 
   @Get(':id')
