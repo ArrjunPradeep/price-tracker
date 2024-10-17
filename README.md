@@ -1,73 +1,94 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Blockchain Price Tracker
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+# Requirement
 
-## Description
+- Nest.js
+- Use Moralis or Solscan API
+- Relational Database System
+- Swagger
+- Clean code
+- Dockerize to runnable on my local computer.
+    - Should be run all the program by one “docker compose up (—build)” command
+    
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+# Feature
+
+1. Automatically save the Price of **Ethereum and Polygon every 5 minutes**
+2. Automatically send an email to “hyperhire_assignment@hyperhire.in” if the price of a chain increases by more than 3% compared to its price one hour ago
+3. API - returning the prices of each hour (within 24hours)
+4. API  - setting alert for specific price.(parameters are chain, dollar, email)
+
+```markdown
+EXAMPLE
+1. User can set alert 1000 dollar for ethereum
+2. If ethereum goes 1000 dollar it send email.
+```
+
+1. API - get swap rate (eth to btc)
+    1. input is ethereum amount
+    2. return values are
+        1. how much btc can get
+        2. total fee (eth, dollar)(fee percentage is 0.03)
+2. no user authentication required.
 
 ## Installation
 
-```bash
-$ npm install
-```
+### Prerequisites
 
-## Running the app
+- `Docker`
 
-```bash
-# development
-$ npm run start
+### Setup
 
-# watch mode
-$ npm run start:dev
+1. **Pull the Image from `Docker Hub`**
+   ```bash
+   docker pull arrjunpradeep/pricetracker:latest
+   docker pull postgres:13.15-alpine
+   ```
 
-# production mode
-$ npm run start:prod
-```
+2. **Create a Network**
+   ```bash
+   docker network create my-network
+   ```
 
-## Test
+3. **Ensure You Have the Required Environment Files**
 
-```bash
-# unit tests
-$ npm run test
+   Create an `env` folder in the root of your project with the following files:
 
-# e2e tests
-$ npm run test:e2e
+   * `.env` : 
+   ```bash
+    POSTGRES_TYPE=XXXXX
+    POSTGRES_HOST=XXXXX
+    POSTGRES_PORT=XXXXX
+    POSTGRES_DB=XXXXX
+    POSTGRES_USER=XXXXX
+    POSTGRES_PASSWORD=XXXXX
+    MORALIS_API_KEY=XXXXX
+    EMAIL_HOST=XXXXX
+    EMAIL_PORT=XXXXX
+    EMAIL_USERNAME=XXXXX
+    EMAIL_PASSWORD=XXXXX
+    RECIPIENT_MAIL=wodif66632@chainds.com
+   ```
+   
 
-# test coverage
-$ npm run test:cov
-```
+4. **Run PostgreSQL Container**
+   ```bash
+   docker run -d --name postgres_db --network my-network --env-file ./env/.env -p 5432:5432 postgres:13.15-alpine
+   ```
 
-## Support
+5. **Run Application Container**
+   ```bash
+   docker run -d --name price --network my-network  --env-file ./env/.env -p 3369:3369 arrjunpradeep/pricetracker:latest
+   ```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+6. **Check Container Logs**
+   ```bash
+   docker logs price
+   docker logs postgres_db
+   ```
 
-## Stay in touch
+7. **Access API Documentation**
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+   Go to http://localhost:3369/swagger for API documentation and testing
