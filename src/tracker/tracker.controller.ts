@@ -4,50 +4,44 @@ import { CreateTrackerDto } from './dto/create-tracker.dto';
 import { UpdateTrackerDto } from './dto/update-tracker.dto';
 import { SwapRateDto } from './dto/swarp-rate.dto';
 import { SetAlertDto } from './dto/set-alert.dto';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { HttpRestApiSwapRateBody } from './documentation/HttpRestAPISwapRateBody';
+import { HttpRestApiSetAlertBody } from './documentation/HttpRestAPISetAlertBody';
 
 @Controller('tracker')
 export class TrackerController {
   constructor(private readonly trackerService: TrackerService) {}
 
-  @Post()
-  create(@Body() createTrackerDto: CreateTrackerDto) {
-    return this.trackerService.create(createTrackerDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.trackerService.findAll();
-  }
-
+  @ApiTags('Price Tracker')
   @Get('getPrices')
+  @ApiOperation({
+    summary: 'Get Prices of each hour',
+    description: `This endpoint allows for retreiving the ethereum and polygon prices of each hour `
+  })
   getPrices24hours() {
     return this.trackerService.getPricesForPast24Hours();
   }
 
+  @ApiTags('Price Tracker')
   @Post('setAlert')
-  async setAlert(@Body() setAlertDto: SetAlertDto) {
-    const { chain, price, email } = setAlertDto;
+  @ApiOperation({
+    summary: 'Setting Alert for specific price',
+    description: `This endpoint allows to trigger an alert and send the mail if price jumps above the triggered value `
+  })
+  async setAlert(@Body() body: HttpRestApiSetAlertBody) {
+    const { chain, price, email } = body;
     return this.trackerService.createAlert(chain, price, email);
   }
 
+  @ApiTags('Price Tracker')
   @Post('swapRate')
-  getSwapRate(@Body() swapRateDto: SwapRateDto) {
-    const {amount} = swapRateDto;
+  @ApiOperation({
+    summary: 'Get Swap rate of ETH to BTC',
+    description: `This endpoint allows to swap ETH to BTC `
+  })
+  getSwapRate(@Body() body: HttpRestApiSwapRateBody) {
+    const {amount} = body;
     return this.trackerService.getSwapRate(amount);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.trackerService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTrackerDto: UpdateTrackerDto) {
-    return this.trackerService.update(+id, updateTrackerDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.trackerService.remove(+id);
-  }
 }

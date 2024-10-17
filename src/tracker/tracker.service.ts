@@ -28,7 +28,7 @@ export class TrackerService {
   }
 
   // 1. Automatically save the Price of Ethereum and Polygon every 5 minutes
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async handleCron() {
     const ethPrice = await this.moralisService.getPrice('0x1');
     const polyPrice = await this.moralisService.getPrice('0x89');
@@ -68,8 +68,8 @@ export class TrackerService {
     }
   }
 
-  // Cron job to check the prices every 5 minutes
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  // Cron job to check the prices every 10 minutes
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async checkPriceAlerts() {
     const alerts = await this.alertRepository.find();
 
